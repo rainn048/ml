@@ -16,6 +16,13 @@ import treePlotter
 # [DataFrame]dataSet: 数据集最后一列为分类标签
 ##########################################
 def calcShannonEnt(dataSet):
+    """计算信息熵.
+    
+    Parameters
+    ----------
+    dataSet : dataframe, 样本数据集，最后一列为分类标签
+
+    """
     numEntries = dataSet.shape[0]
     labelCounts = {}
     # 统计所有分类
@@ -42,6 +49,15 @@ def calcShannonEnt(dataSet):
 # value[numberic]: 特征值
 #############################################
 def splitDataSet(dataSet, axis, value):
+    """按照指定列分裂数据.
+    
+    Parameters
+    ----------
+    dataSet : dataframe, 样本数据集，最后一列为分类标签
+    axis: index，特征的列名
+    value: float, 特征值
+    
+    """
 #    print("**********")
 #    print(dataSet[axis])
 #    print("**********")
@@ -60,6 +76,15 @@ def splitDataSet(dataSet, axis, value):
 ################################################
 
 def chooseBestFeatureToSplit(dataSet):
+    """选择最好的划分特征.
+    
+    Parameters
+    ----------
+    dataSet : dataframe, 样本数据集，最后一列为分类标签
+    
+    """
+    
+    
     shape = dataSet.shape
     
     baseEntropy = calcShannonEnt(dataSet) #基础信息熵
@@ -85,6 +110,13 @@ def chooseBestFeatureToSplit(dataSet):
 ##########################################################
 
 def majorityCnt(classList):
+    """多数投票选择分类结果.
+    
+    Parameters
+    ----------
+    classList : Series, 分类标签
+    
+    """
     classCount={}
     for vote in classList:
         if vote not in classCount.keys():
@@ -102,6 +134,14 @@ def majorityCnt(classList):
 # [Series] label：分类标签
 ##########################################################   
 def createTree(dataSet):
+    """创建决策树.
+    
+    Parameters
+    ----------
+    dataSet : dataframe, 样本数据集，最后一列为分类标签
+    
+    """
+    
     classList = dataSet.iloc[:,-1]
     if classList.drop_duplicates().size == 1:#1. 类别完全相同则停止继续划分
         #print("1. 类别完全相同则停止继续划分: ", classList.iloc[0])
