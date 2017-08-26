@@ -12,19 +12,20 @@ from sklearn.datasets import load_iris
 import treePlotter
 
 
-class Tree:
+class DecisionTree:
     
 ###############################################################################
 # 0. 构造函数
 ###############################################################################
-    def __init__(self, criterion='gini'):
+    def __init__(self, criterion='infoGainRate'):
         """
         
         Parameters
         ----------
         criterion : string, (default="gini")
             The function to measure the quality of a split. Supported criteria are
-            "gini" for the Gini impurity and "entropy" for the information gain.
+            "gini" for the Gini impurity , "entropy" for the information gain and
+            "infoGainRate" for the information gain rate.
             
         """
         self.criterion = criterion
@@ -52,7 +53,27 @@ class Tree:
             shannonEnt -= prob * log(prob, 2)
         return shannonEnt
 
-
+###############################################################################
+# 1.5. 计算gini
+###############################################################################
+    def calcGini(self, dataSet):
+        """计算gini.
+        
+        Parameters
+        ----------
+        dataSet : dataframe, 样本数据集，最后一列为分类标签
+    
+        """
+        numEntries = dataSet.shape[0]
+        label = dataSet.iloc[:,-1]
+        labelCounts = label.value_counts()
+        
+        #计算gini
+        gini = 1.0
+        for index, value in labelCounts.iteritems():
+            prob = float(value)/numEntries
+            gini -= prob * prob
+        return gini
 
 ###############################################################################
 #2. 按照给定特征划分数据集
@@ -76,7 +97,7 @@ class Tree:
 
 
 ###############################################################################
-#3. 选择最好的数据集划分方式
+#3. 使用信息熵选择最好的数据集划分方式
 ###############################################################################
     def chooseBestFeatureToSplit(self, dataSet):
         """选择最好的划分特征.
@@ -87,6 +108,7 @@ class Tree:
         criterion：The function to measure the quality of a split. Supported 
         criteria are “gini” for the Gini impurity and “entropy” for the information
         gain.
+        
         """
         
         
@@ -105,7 +127,7 @@ class Tree:
             infoGain = baseEntropy - newEntropy
             
             #如果是gini规则，则计算惩罚系数
-            if self.criterion == "gini":
+            if self.criterion == "infoGainRate":
                 feat = col.to_frame()
                 iv = self.calcShannonEnt(feat)
                 if iv == 0:    #value of the feature is all same,infoGain and iv all equal 0, skip the feature
@@ -119,6 +141,47 @@ class Tree:
         return bestFeature
 
 
+###############################################################################
+#3.5. 使用gini选择最好的数据集划分方式
+###############################################################################
+    def chooseBestFeatureToSplit(self, dataSet):
+        """选择最好的划分特征.
+        
+        Parameters
+        ----------
+        dataSet : dataframe, 样本数据集，最后一列为分类标签
+        
+        """
+        
+        shape = dataSet.shape
+        
+        baseEntropy = self.calcShannonEnt(dataSet) #基础信息熵
+        
+        bestInfoGain = 0.0; bestFeature = -1 
+        for i,col in dataSet.iloc[:,0:-1].iteritems():
+            eachFeat = dataSet.loc[:, i].drop_duplicates()
+            newEntropy = 0.0
+            for index, value in eachFeat.iteritems():
+                subDataSet = self.splitDataSet(dataSet, i, value) #按照当前特征划分数据集
+                prob = subDataSet.shape[0]/float(shape[0])
+                newEntropy += prob * self.calcShannonEnt(subDataSet)
+            infoGain = baseEntropy - newEntropy
+            
+            #如果是gini规则，则计算惩罚系数
+            if self.criterion == "infoGainRate":
+                feat = col.to_frame()
+                iv = self.calcShannonEnt(feat)
+                if iv == 0:    #value of the feature is all same,infoGain and iv all equal 0, skip the feature
+                    continue
+                infoGain = infoGain / iv
+                
+            
+            if infoGain > bestInfoGain:
+                bestInfoGain = infoGain
+                bestFeature = i
+        return bestFeature		
+		
+		
 
 ###############################################################################
 #4. 多数表决分类
@@ -145,7 +208,7 @@ class Tree:
 ###############################################################################
 #5. 创建决策树
 ############################################################################### 
-    def createTree(self, dataSet):
+    def fit(self, dataSet):
         """创建决策树.
         
         Parameters
@@ -190,8 +253,8 @@ def main():
 
     raw = pd.DataFrame(iris.data, columns=iris.feature_names)
     raw['target'] = iris.target
-    tree = Tree()
-    myTree = tree.createTree(raw)
+    tree = DecisionTree()
+    myTree = tree.fit(raw)
     treePlotter.createPlot(myTree)
     
 
